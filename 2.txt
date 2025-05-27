@@ -1,0 +1,43 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load dataset from a local file
+df = pd.read_csv("/content/Iris.csv") # Change path if needed
+
+# Display the first few rows to check the data
+print(df.head())
+
+# Select numerical columns (modify column names as needed)
+x = df["SepalLengthCm"]
+y = df["PetalLengthCm"]
+
+# Scatter plot
+plt.figure(figsize=(7, 5))
+plt.scatter(x, y, alpha=0.7, color='blue')
+plt.xlabel("Sepal Length (cm)")
+plt.ylabel("Petal Length (cm)")
+plt.title("Scatter Plot of Sepal Length vs Petal Length")
+plt.grid()
+plt.show()
+
+# Compute Pearson correlation coefficient
+correlation = np.corrcoef(x, y)[0, 1]
+print(f"Pearson Correlation Coefficient: {correlation:.2f}")
+
+# Compute covariance matrix
+cov_matrix = np.cov(df.select_dtypes(include=[np.number]), rowvar=False)
+print("\nCovariance Matrix:")
+print(cov_matrix)
+
+# Compute correlation matrix
+corr_matrix = df.corr(numeric_only=True)
+print("\nCorrelation Matrix:")
+print(corr_matrix)
+
+# Heatmap of correlation matrix
+plt.figure(figsize=(8, 6))
+sns.heatmap(corr_matrix, annot=True, cmap="coolwarm", linewidths=0.5)
+plt.title("Correlation Matrix Heatmap")
+plt.show()
