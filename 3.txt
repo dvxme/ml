@@ -1,41 +1,35 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.datasets import load_iris
 from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
 
 # Load the Iris dataset
 iris = load_iris()
-data = iris.data
-labels = iris.target
-label_names = iris.target_names
+X = iris.data  # Feature matrix (4 features)
+y = iris.target  # Target labels (species)
+target_names = iris.target_names  # Class names
 
-# Convert to a DataFrame for better visualization
-iris_df = pd.DataFrame(data, columns=iris.feature_names)
+# Standardize the dataset
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
 
-# Perform PCA to reduce dimensionality to 2
+# Apply PCA to reduce dimensions from 4 to 2
 pca = PCA(n_components=2)
-data_reduced = pca.fit_transform(data)
+X_pca = pca.fit_transform(X_scaled)
 
-# Create a DataFrame for the reduced data
-reduced_df = pd.DataFrame(data_reduced, columns=['Principal Component 1', 'Principal Component 2'])
-reduced_df['Label'] = labels
+# Convert to DataFrame for easy visualization
+df_pca = pd.DataFrame(X_pca, columns=['PC1', 'PC2'])
+df_pca['target'] = y
 
-# Plot the reduced data
-plt.figure(figsize=(8, 6))
-colors = ['r', 'g', 'b']
-
-for i, label in enumerate(np.unique(labels)):
-    plt.scatter(
-        reduced_df[reduced_df['Label'] == label]['Principal Component 1'],
-        reduced_df[reduced_df['Label'] == label]['Principal Component 2'],
-        label=label_names[label],
-        color=colors[i]
-    )
-
-plt.title('PCA on Iris Dataset')
+# Visualize the PCA-transformed data
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x='PC1', y='PC2', hue='target', palette='viridis', data=df_pca)
 plt.xlabel('Principal Component 1')
 plt.ylabel('Principal Component 2')
-plt.legend()
-plt.grid()
+plt.title('PCA on Iris Dataset (4D → 2D)')
+plt.legend(title='Species', labels=target_names)
+plt.tight_layout()
 plt.show()
