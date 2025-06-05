@@ -1,25 +1,48 @@
-from sklearn import datasets
+# Import necessary libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
+from sklearn import tree
 
-# Load the Iris dataset
-iris = datasets.load_iris()
-X = iris.data  # Features
-y = iris.target  # Labels (Setosa, Versicolor, Virginica)
+# Load the Breast Cancer dataset
+data = load_breast_cancer()
+X = data.data  # Features
+y = data.target  # Labels (0 - malignant, 1 - benign)
 
-# Split dataset into 80% training and 20% testing
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# Create and train Naïve Bayes classifier
-nb_classifier = GaussianNB()
-nb_classifier.fit(X_train, y_train)
+# Create a decision tree classifier
+clf = DecisionTreeClassifier(random_state=42)
 
-# Make predictions on test data
-y_pred = nb_classifier.predict(X_test)
+# Train the model
+clf.fit(X_train, y_train)
 
-# Compute accuracy
+# Make predictions on the testing set
+y_pred = clf.predict(X_test)
+
+# Evaluate the accuracy of the model
 accuracy = accuracy_score(y_test, y_pred)
-print(f"Naïve Bayes Classifier Accuracy: {accuracy * 100:.2f}%")
+print(f'Accuracy of Decision Tree Classifier: {accuracy * 100:.2f}%')
+
+# Example: Classify a new sample (same feature length as training data)
+# Sample: [mean radius, mean texture, mean perimeter, mean area, mean smoothness, ...]
+new_sample = np.array([[14.3, 18.1, 92.8, 600.1, 0.097, 0.084, 0.083, 0.080, 0.077, 0.064, 
+                        0.087, 0.087, 0.077, 0.089, 0.085, 0.085, 0.080, 0.095, 0.087, 0.090, 
+                        0.091, 0.080, 0.076, 0.080, 0.092, 0.079, 0.089, 0.090, 0.091, 0.089]])
+
+new_prediction = clf.predict(new_sample)
+
+# Display the prediction result (0: malignant, 1: benign)
+print(f'Predicted Class for the new sample: {"Benign" if new_prediction[0] == 1 else "Malignant"}')
+
+# Visualize the decision tree
+plt.figure(figsize=(20, 10))
+tree.plot_tree(clf, filled=True, feature_names=data.feature_names, class_names=data.target_names)
+plt.title("Decision Tree Visualization")
+plt.tight_layout()
+plt.show()
