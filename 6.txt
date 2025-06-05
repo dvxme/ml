@@ -1,95 +1,38 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.datasets import fetch_california_housing
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures, StandardScaler
-from sklearn.pipeline import make_pipeline
-from sklearn.metrics import mean_squared_error, r2_score
 
+# Generate Synthetic Dataset
+np.random.seed(42)
+X = np.linspace(-3, 3, 100)  # 100 points between -3 and 3
+Y = np.sin(X) + np.random.normal(0, 0.1, 100)  # Sin function with noise
 
-def linear_regression_california():
-    # Load dataset
-    housing = fetch_california_housing(as_frame=True)
-    X = housing.data[["AveRooms"]]
-    y = housing.target
+# Add Bias Term
+X_matrix = np.c_[np.ones(X.shape[0]), X]
 
-    # Split dataset
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+# Gaussian Kernel Function
+def get_weights(query_point, X, tau):
+    return np.exp(-((X - query_point) ** 2) / (2 * tau ** 2))
 
-    # Train linear regression model
-    model = LinearRegression()
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
+# Locally Weighted Regression Function
+def locally_weighted_regression(query_x, X, Y, tau):
+    W = np.diag(get_weights(query_x, X, tau))  # Compute weight matrix
+    theta = np.linalg.pinv(X_matrix.T @ W @ X_matrix) @ X_matrix.T @ W @ Y  # Solve normal equation
+    return np.array([1, query_x]) @ theta  # Prediction for query_x
 
-    # Plot
-    plt.figure(figsize=(8, 5))
-    plt.scatter(X_test, y_test, color="blue", label="Actual", alpha=0.6)
-    plt.scatter(X_test, y_pred, color="red", label="Predicted", alpha=0.6)
-    plt.xlabel("Average number of rooms (AveRooms)")
-    plt.ylabel("Median value of homes ($100,000)")
-    plt.title("Linear Regression - California Housing Dataset")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+# Plot Setup
+plt.figure(figsize=(10, 6))
 
-    # Metrics
-    print("\nLinear Regression - California Housing Dataset")
-    print("Mean Squared Error:", mean_squared_error(y_test, y_pred))
-    print("R^2 Score:", r2_score(y_test, y_pred))
+# Try different bandwidth (tau) values
+tau_values = [0.1, 0.3, 1.0]
+for tau in tau_values:
+    Y_pred = np.array([locally_weighted_regression(x, X, Y, tau) for x in X])
+    plt.plot(X, Y_pred, label=f'Tau = {tau}')
 
-
-def polynomial_regression_auto_mpg():
-    # Load Auto MPG data
-    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data"
-    column_names = [
-        "mpg", "cylinders", "displacement", "horsepower", "weight",
-        "acceleration", "model_year", "origin", "car_name"
-    ]
-    data = pd.read_csv(url, sep='\s+', names=column_names, na_values="?", comment='\t', skipinitialspace=True)
-
-    # Clean and prepare data
-    data = data.dropna()
-    X = data["displacement"].values.reshape(-1, 1)
-    y = data["mpg"].values
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
-
-    # Polynomial Regression
-    poly_model = make_pipeline(
-        PolynomialFeatures(degree=2),
-        StandardScaler(),
-        LinearRegression()
-    )
-    poly_model.fit(X_train, y_train)
-    y_pred = poly_model.predict(X_test)
-
-    # Plot
-    plt.figure(figsize=(8, 5))
-    plt.scatter(X_test, y_test, color="blue", label="Actual", alpha=0.6)
-    plt.scatter(X_test, y_pred, color="red", label="Predicted", alpha=0.6)
-    plt.xlabel("Displacement")
-    plt.ylabel("Miles per gallon (MPG)")
-    plt.title("Polynomial Regression - Auto MPG Dataset")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    # Metrics
-    print("\nPolynomial Regression - Auto MPG Dataset")
-    print("Mean Squared Error:", mean_squared_error(y_test, y_pred))
-    print("R^2 Score:", r2_score(y_test, y_pred))
-
-
-# Main Execution
-if __name__ == "__main__":
-    print("Demonstrating Linear Regression and Polynomial Regression")
-    linear_regression_california()
-    polynomial_regression_auto_mpg()
+# Plot the Original Data
+plt.scatter(X, Y, color='black', label="Original Data", alpha=0.5)
+plt.xlabel("X")
+plt.ylabel("Y")
+plt.title("Locally Weighted Regression with Different Tau Values")
+plt.legend()
+plt.tight_layout()
+plt.show()
