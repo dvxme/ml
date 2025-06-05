@@ -1,70 +1,38 @@
+# Import necessary libraries
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+from sklearn.datasets import fetch_olivetti_faces
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score
 
-from sklearn.datasets import load_breast_cancer
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-from sklearn.metrics import confusion_matrix, classification_report
+# Load the Olivetti Face dataset
+data = fetch_olivetti_faces(shuffle=True, random_state=42)
 
-# Load dataset
-data = load_breast_cancer()
+# Features (images flattened into vectors) and target (person labels)
 X = data.data
 y = data.target
 
-# Standardize features
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+# Split the data into training and testing sets (70% training, 30% testing)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# Apply KMeans clustering
-kmeans = KMeans(n_clusters=2, random_state=42)
-y_kmeans = kmeans.fit_predict(X_scaled)
+# Create and train a Naive Bayes classifier
+nb_classifier = GaussianNB()
+nb_classifier.fit(X_train, y_train)
 
-# Evaluation
-print("Confusion Matrix:")
-print(confusion_matrix(y, y_kmeans))
-print("\nClassification Report:")
-print(classification_report(y, y_kmeans))
+# Predict the labels for the test set
+y_pred = nb_classifier.predict(X_test)
 
-# Reduce dimensions for visualization using PCA
-pca = PCA(n_components=2)
-X_pca = pca.fit_transform(X_scaled)
-df = pd.DataFrame(X_pca, columns=['PC1', 'PC2'])
+# Evaluate the accuracy of the classifier
+accuracy = accuracy_score(y_test, y_pred)
+print(f'Accuracy of the Naive Bayes classifier: {accuracy * 100:.2f}%')
 
-# Add cluster and true label columns
-df['Cluster'] = y_kmeans
-df['True Label'] = y
+# Example: Classify a new test sample
+# Randomly select a sample from the test set for demonstration
+sample_index = 0
+new_sample = X_test[sample_index].reshape(1, -1)  # Reshape to match expected input format
 
-# Plot: KMeans clustering
-plt.figure(figsize=(8, 6))
-sns.scatterplot(data=df, x='PC1', y='PC2', hue='Cluster', palette='Set1',
-                s=100, edgecolor='black', alpha=0.7)
-plt.title('K-Means Clustering of Breast Cancer Dataset')
-plt.xlabel('Principal Component 1')
-plt.ylabel('Principal Component 2')
-plt.legend(title='Cluster')
-plt.show()
+# Predict the class of the new sample
+new_prediction = nb_classifier.predict(new_sample)
 
-# Plot: True labels
-plt.figure(figsize=(8, 6))
-sns.scatterplot(data=df, x='PC1', y='PC2', hue='True Label', palette='coolwarm',
-                s=100, edgecolor='black', alpha=0.7)
-plt.title('True Labels of Breast Cancer Dataset')
-plt.xlabel('Principal Component 1')
-plt.ylabel('Principal Component 2')
-plt.legend(title='True Label')
-plt.show()
-
-# Plot: Clusters with centroids
-plt.figure(figsize=(8, 6))
-sns.scatterplot(data=df, x='PC1', y='PC2', hue='Cluster', palette='Set1',
-                s=100, edgecolor='black', alpha=0.7)
-centers = pca.transform(kmeans.cluster_centers_)
-plt.scatter(centers[:, 0], centers[:, 1], s=200, c='red', marker='x', label='Centroids')
-plt.title('K-Means Clustering with Centroids')
-plt.xlabel('Principal Component 1')
-plt.ylabel('Principal Component 2')
-plt.legend()
-plt.show()
+# Display the prediction result (person ID)
+print(f'Predicted person ID for the new sample: {new_prediction[0]}')
