@@ -1,50 +1,32 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.neighbors import KNeighborsClassifier
 
-# Gaussian (RBF) kernel function
-def gaussian_kernel(x, xi, tau):
-    return np.exp(-np.sum((x - xi) ** 2) / (2 * tau ** 2))
+# Step 1: Generate 100 random values in the range [0,1]
+np.random.seed(42)  # For reproducibility
+x = np.random.rand(100, 1)  # Generate 100 random points
 
-# Locally Weighted Regression (LWR)
-def locally_weighted_regression(x, X, y, tau):
-    m = X.shape[0]
-    weights = np.array([gaussian_kernel(x, X[i], tau) for i in range(m)])
-    W = np.diag(weights)
-    
-    # theta = (X^T * W * X)^(-1) * X^T * W * y
-    XTW = X.T @ W
-    theta = np.linalg.inv(XTW @ X) @ XTW @ y
-    
-    return x @ theta
+# Step 2: Label the first 50 points
+y = np.array(['Class1' if xi <= 0.5 else 'Class2' for xi in x[:50]])  # Label based on condition
 
-# Generate synthetic data
-np.random.seed(42)
-X = np.linspace(0, 2 * np.pi, 100)
-y = np.sin(X) + 0.1 * np.random.randn(100)
+# Step 3: Train KNN Classifier and classify the remaining 50 points
+k_values = [1, 2, 3, 4, 5, 20, 30]
+for k in k_values:
+    knn = KNeighborsClassifier(n_neighbors=k)
+    knn.fit(x[:50], y)  # Train only on the first 50 labeled points
+    y_pred = knn.predict(x[50:])  # Predict labels for x51 to x100
 
-# Add bias term to X (i.e., prepend a column of 1s)
-X_bias = np.c_[np.ones(X.shape), X]
+    # Step 4: Display results
+    print(f"\nResults for k = {k}:")
+    for i, label in enumerate(y_pred, start=51):
+        print(f"x{i} = {x[i-1][0]:.3f} → Classified as {label}")
 
-# Test data
-x_test = np.linspace(0, 2 * np.pi, 200)
-x_test_bias = np.c_[np.ones(x_test.shape), x_test]
-
-# Bandwidth (tau) for LWR
-tau = 0.5
-
-# Predict y for each test point using LWR
-y_pred = np.array([
-    locally_weighted_regression(xi, X_bias, y, tau)
-    for xi in x_test_bias
-])
-
-# Plot
-plt.figure(figsize=(10, 6))
-plt.scatter(X, y, color='red', label='Training Data', alpha=0.7)
-plt.plot(x_test, y_pred, color='blue', label=f'LWR Fit (tau={tau})', linewidth=2)
-plt.xlabel('X', fontsize=12)
-plt.ylabel('y', fontsize=12)
-plt.title('Locally Weighted Regression', fontsize=14)
-plt.legend(fontsize=10)
-plt.grid(alpha=0.3)
+# Step 5: Visualization (only for the last k-value run)
+plt.figure(figsize=(8, 5))
+plt.scatter(x[:50], np.zeros(50), c=['blue' if yi == 'Class1' else 'red' for yi in y], label="Labeled Data")
+plt.scatter(x[50:], np.zeros(50), c='black', marker='x', label="Unlabeled Data")
+plt.xlabel("x values")
+plt.ylabel("Classification")
+plt.title("KNN Classification of Random Data Points")
+plt.legend()
 plt.show()
